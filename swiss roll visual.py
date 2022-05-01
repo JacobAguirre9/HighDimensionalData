@@ -9,7 +9,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse.csgraph import shortest_path
 from scipy.spatial import distance_matrix
-from models.mds import mds
+from sklearn.manifold import MDS
+# for MDS dimensionality reduction we import the above^
+
 
 
 class Isomap:
@@ -17,10 +19,9 @@ class Isomap:
 		self.k_neigh = k_neigh	#Number of NearestNeighbors
 
 	def graph(self, D):
-		""" Builds a graph representation in an array-format
-		:param D: Matrix containing pair-wise distances
-		:return graph: A graph representation
-		"""
+		# D is a matrix such that it contains all the pair-wise distances
+		# graph will simply show us the graphical representation
+
 		N, N = D.shape
 
 		graph = {}
@@ -70,7 +71,7 @@ class Isomap:
 		ShortestPathMatrix *= - 0.5
 		ShortestPathMatrix += - np.mean(ShortestPathMatrix, axis=0)
 
-		emb = mds(ShortestPathMatrix, 2)
+		emb = MDS(ShortestPathMatrix, 2)
 
 		return emb
 
@@ -95,9 +96,17 @@ def SwissRollin3D(X, color):
 	ax.scatter3D(X[0], X[1], X[2], c = color, cmap="rainbow")
 	ax.tick_params(labelleft=False, labelbottom=False, labelright=False, labeltop=False)
 	plt.show()
-# The rainbow color is my favorite as it really allows us to have a nice visualization of a swiss roll :D
+
+	# Of course, if you want to visualize the plots, you will need to MANUALLY type in plt.show(SwissRollin3D)
+	# OR manually type in plt.show(SwissRollin2D)
+	# I turned this off, because when running in pycharm I didn't want the plots to generate every single time I tried to run the code
+
+
+	# The rainbow color is my favorite as it really allows us to have a nice visualization of a swiss roll :D
 def SwissRollin2D(X, color):
 	plt.style.use('ggplot')
 	plt.scatter(X[0], X[1], c=color, cmap='rainbow')
 	plt.tick_params(labelleft=False, labelbottom=False, labelright=False, labeltop=False)
 	plt.show()
+	# Again, just to reiterate, simply insert function name and you will get the plot to appear
+
