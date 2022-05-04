@@ -53,10 +53,6 @@ class Isomap:
 		return FullGraphMatrix
 
 	def fit_transform(self, X):
-		""" Embedds a data matrix with Isomap.
-		:param X: Data Matrix with shape = (Ndim, Npts)
-		:return emb: Embedding
-		"""
 
 		D = distance_matrix(X.T, X.T)
 
