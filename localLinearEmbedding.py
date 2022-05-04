@@ -13,8 +13,7 @@
 # When looking at codes, these seemed to be every package I needed to use
 import numpy as np
 from scipy.linalg import eigh, svd, qr, solve
-from ..utils import check_random_state, check_array
-from ..utils._arpack import _init_arpack_v0
+
 from ..utils.extmath import stable_cumsum
 from ..base import (
     BaseEstimator,
@@ -24,10 +23,8 @@ from ..base import (
 )
 
 from ..utils.validation import check_is_fitted
-from ..utils.validation import FLOAT_DTYPES
 from ..neighbors import NearestNeighbors
 from scipy.sparse import eye, csr_matrix
-from scipy.sparse.linalg import eigsh
 
 # This function needs to take in a dataset X (here, a swiss roll, where I used the code from the other Isomap function to generate a swiss roll)
 # X and Y both share the same format such that X,Y=(Number of Samples, number of dimensions)
@@ -70,17 +67,13 @@ def locally_linear_embedding(
     eigen_solver="auto",
     tol=1e-6,
     max_iter=100,
-    method="standard",
     hessian_tol=1e-4,
     modified_tol=1e-12,
     random_state=None,
     n_jobs=None,
 ):
-    if eigen_solver not in ("auto", "arpack", "dense"):
-        raise ValueError("unrecognized eigen_solver '%s'" % eigen_solver)
 
-    if method not in ("standard", "hessian", "modified", "ltsa"):
-        raise ValueError("unrecognized method '%s'" % method)
+
 
     nbrs = NearestNeighbors(n_neighbors=n_neighbors + 1, n_jobs=n_jobs)
     nbrs.fit(X)
@@ -98,18 +91,15 @@ def locally_linear_embedding(
             % (N, n_neighbors)
         )
 
-    if n_neighbors <= 0:
-        raise ValueError("n_neighbors must be positive")
 
-    M_sparse = eigen_solver != "dense"
-
+    # so , we need to consider the case if n were to be sparse
+    # take some matrix M and allow for M to be = (I-W)'(I-W) such that I is the identity matrix and W is the matrix from above
     if method == "standard":
-        W = barycenter_kneighbors_graph(
-            nbrs, n_neighbors=n_neighbors, reg=reg, n_jobs=n_jobs
+        W = BCKNeighborGraph(
+            nbrs, number_neighbors=n_neighbors, reg=reg, n_jobs=n_jobs
         )
 
-        # we'll compute M = (I-W)'(I-W)
-        # depending on the solver, we'll do this differently
+
         if M_sparse:
             M = eye(*W.shape, format=W.format) - W
             M = (M.T * M).tocsr()
@@ -117,8 +107,7 @@ def locally_linear_embedding(
             M = (W.T * W - W.T - W).toarray()
             M.flat[:: M.shape[0] + 1] += 1  # W = W - I = W - I
 
-    elif method == "hessian":
-        dp = n_components * (n_components + 1) // 2
+# if you need to know what eye shape means, google it or look at the book intro to statistical learning!
 
         if n_neighbors <= n_components + dp:
             raise ValueError(
@@ -167,6 +156,8 @@ def locally_linear_embedding(
 
             nbrs_x, nbrs_y = np.meshgrid(neighbors[i], neighbors[i])
             M[nbrs_x, nbrs_y] += np.dot(w, w.T)
+# The above code is an interesting numerical linear algebra problem, such that we're trying to build a hessian estimator
+
 
         # we sort of have to add in this clause, simply because many of the matrices we'll be dealing with are sparse
         if M_sparse:
@@ -332,4 +323,9 @@ class LocallyLinearEmbedding(
     # For the examples of Swiss roll, simply take the code from swiss roll visual py, insert here
     # again, I don't really know how to run code by sections (which is very annoying) so I didn't include the code on here for the final section
     # taking the time to run this code takes quite a bit, and I am not as proud of this work as I am with Isomap's code.
+    # also, I am going to be using the PCA code as well to compare LLE vs PCA
+    # this code is straight from scikit for the illustrations
+    # as the above code is practically infeasible to run completely on all data sets :/ I encountered too many problems with it
     # Thank you
+
+    
